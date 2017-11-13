@@ -50,7 +50,7 @@ public class SPUtils {
      * @return
      */
     public static SPUtils getInstance(Context context, String spName) {
-        if (isSpace(spName)) {
+        if (StringUtils.isSpace(spName)) {
             //未命名的情况设置为默认值spUtils
             spName = "spUtils";
         }
@@ -60,26 +60,6 @@ public class SPUtils {
             SP_UTILS_MAP.put(spName, spUtils);
         }
         return spUtils;
-    }
-
-    /**
-     * 判断字符串是否为空字符串
-     *
-     * @param content 传入的字符串
-     * @return
-     */
-    private static boolean isSpace(String content) {
-        if (content == null) {
-            return true;
-        }
-        for (int i = 0; i < content.length(); i++) {
-            //只要有一个字符是非空格则跳出返回false
-            if (!Character.isSpaceChar(content.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-
     }
 
 }
