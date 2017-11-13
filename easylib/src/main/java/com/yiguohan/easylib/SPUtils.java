@@ -23,6 +23,15 @@ public class SPUtils {
     private static Map<String, SPUtils> SP_UTILS_MAP = new HashMap<>();
 
     /**
+     * SPUtils构造函数
+     *
+     * @param spName
+     */
+    private SPUtils(String spName) {
+        this(GlobalUtils.getApp().getApplicationContext(), spName);
+    }
+
+    /**
      * SPUtils构造函数，初始化sp
      *
      * @param context
@@ -35,31 +44,28 @@ public class SPUtils {
     /**
      * 获取SPUtils实例（未命名SharedPreference名称，默认名称为“spUtils”）
      *
-     * @param context 上下文
      * @return
      */
-    public static SPUtils getInstance(Context context) {
-        return getInstance(context, "");
+    public static SPUtils getInstance() {
+        return getInstance("");
     }
 
     /**
      * 获取SPUtils实例
      *
-     * @param context 上下文
-     * @param spName  指定的SharedPreferences名称（未指定默认为“spUtils”）
+     * @param spName 指定的SharedPreferences名称（未指定默认为“spUtils”）
      * @return
      */
-    public static SPUtils getInstance(Context context, String spName) {
+    public static SPUtils getInstance(String spName) {
         if (StringUtils.isSpace(spName)) {
             //未命名的情况设置为默认值spUtils
             spName = "spUtils";
         }
         SPUtils spUtils = SP_UTILS_MAP.get(spName);
         if (spUtils == null) {
-            spUtils = new SPUtils(context, spName);
+            spUtils = new SPUtils(spName);
             SP_UTILS_MAP.put(spName, spUtils);
         }
         return spUtils;
     }
-
 }
