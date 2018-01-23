@@ -12,6 +12,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.View;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -27,7 +28,8 @@ public class FragmentUtils {
     public static final String ARGS_IS_HIDE = "args_hide";
     public static final String ARGS_IS_ADD_STACK = "args_is_add_stack";
     public static final int TYPE_ADD_FRAGMENT = 0x01;
-    public static final int TYPE_REPLACE_FRAGMENT = 0x01 << 1;
+    public static final int TYPE_SHOW_FRAGMENT = 0x01 << 1;
+    public static final int TYPE_HIDE_FRAGMENT = 0x01 << 2;
 
     /**
      * 添加 Fragment 3 参数重载
@@ -211,6 +213,67 @@ public class FragmentUtils {
     }
 
     /**
+     * 显示 fragment
+     *
+     * @param show 要显示的fragment
+     */
+    public static void show(@NonNull final Fragment show) {
+        putArgs(show, false);
+        operateNoAnim(show.getFragmentManager(), TYPE_SHOW_FRAGMENT, null, show);
+    }
+
+    /**
+     * 显示 fragment
+     *
+     * @param fm FragmentManager对象
+     */
+    public static void show(@NonNull final FragmentManager fm) {
+        List<Fragment> fragments = getFragments(fm);
+        for (Fragment show : fragments) {
+            putArgs(show, false);
+        }
+        operateNoAnim(fm, TYPE_SHOW_FRAGMENT, null, fragments.toArray(new Fragment[fragments.size()]));
+    }
+
+    /**
+     * 隐藏 fragment
+     *
+     * @param hide 要隐藏的fragment
+     */
+    public static void hide(@NonNull final Fragment hide) {
+        putArgs(hide, true);
+        operateNoAnim(hide.getFragmentManager(), TYPE_HIDE_FRAGMENT, null, hide);
+    }
+
+    /**
+     * 隐藏 fragment
+     *
+     * @param fm FragmentManager对象
+     */
+    public static void hide(@NonNull final FragmentManager fm) {
+        List<Fragment> fragments = getFragments(fm);
+        for (Fragment hide : fragments) {
+            putArgs(hide, true);
+        }
+        operateNoAnim(fm, TYPE_HIDE_FRAGMENT, null, fragments.toArray(new Fragment[fragments.size()]));
+    }
+
+    /**
+     * 获取同级别的 fragment
+     *
+     * @param fm FragmentManager对象
+     * @return FragmentManager对象中的fragment
+     */
+    public static List<Fragment> getFragments(@NonNull final FragmentManager fm) {
+        @SuppressWarnings("RestrictedApi")
+        List<Fragment> fragments = fm.getFragments();
+        if (fragments == null || fragments.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return fragments;
+    }
+
+    /**
      * Fragment操作事务方法
      *
      * @param type                操作类型
@@ -278,6 +341,12 @@ public class FragmentUtils {
         ft.setCustomAnimations(enter, exit, popEnter, popExit);
     }
 
+    /**
+     * 添加共享元素
+     *
+     * @param ft    FragmentTransaction对象
+     * @param views 共享元素
+     */
     private static void addSharedElement(final FragmentTransaction ft,
                                          final View... views) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
