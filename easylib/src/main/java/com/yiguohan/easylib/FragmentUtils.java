@@ -1,12 +1,18 @@
 package com.yiguohan.easylib;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.AnimRes;
+import android.support.annotation.AnimatorRes;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
+import android.view.View;
+
+import java.util.List;
 
 /**
  * Fragment相关工具类
@@ -24,25 +30,188 @@ public class FragmentUtils {
     public static final int TYPE_REPLACE_FRAGMENT = 0x01 << 1;
 
     /**
-     * 添加Fragment
+     * 添加 Fragment 3 参数重载
+     *
+     * @param fm          FragmentManager对象
+     * @param target      待添加的Fragment
+     * @param containerId 布局Id
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId) {
+        add(fm, target, containerId, false);
+    }
+
+    /**
+     * 添加 Fragment 4 参数重载
+     *
+     * @param fm          FragmentManager对象
+     * @param target      待添加的Fragment
+     * @param containerId 布局Id
+     * @param isHide      是否隐藏
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           final boolean isHide) {
+        add(fm, target, containerId, isHide, false);
+    }
+
+    /**
+     * 添加 Fragment 4 参数重载
+     *
+     * @param fm            FragmentManager对象
+     * @param target        待添加的Fragment
+     * @param containerId   布局Id
+     * @param shareElements 共享元素
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           @NonNull final View... shareElements) {
+        add(fm, target, containerId, false, shareElements);
+    }
+
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final List<Fragment> target,
+                           @IdRes final int containerId,
+                           final int showIndex) {
+        add(fm, target.toArray(new Fragment[target.size()]), containerId, showIndex);
+    }
+
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment[] target,
+                           @IdRes final int containerId,
+                           final int showIndex) {
+        for (int i = 0, len = target.length; i < len; ++i) {
+            putArgs(target[i], new Args(containerId, showIndex != i, false));
+        }
+        operateNoAnim(fm, TYPE_ADD_FRAGMENT, null, target);
+    }
+
+    /**
+     * 添加 Fragment 5 参数重载
+     *
+     * @param fm             FragmentManager对象
+     * @param target         待添加的Fragment
+     * @param containerId    布局Id
+     * @param isAddStack     是否入回退栈
+     * @param shareLelements 共享元素
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           final boolean isAddStack,
+                           @NonNull final View... shareLelements) {
+        FragmentTransaction ft = fm.beginTransaction();
+        putArgs(target, new Args(containerId, false, isAddStack));
+        addSharedElement(ft, shareLelements);
+        operate(TYPE_ADD_FRAGMENT, fm, ft, null, target);
+    }
+
+    /**
+     * 添加 Fragment 5 参数重载
+     *
+     * @param fm          FragmentManager对象
+     * @param target      待添加的Fragment
+     * @param containerId 布局Id
+     * @param isHide      是否隐藏
+     * @param isAddStack  是否入回退栈
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           final boolean isHide,
+                           final boolean isAddStack) {
+        putArgs(target, new Args(containerId, isHide, isAddStack));
+        operateNoAnim(fm, TYPE_ADD_FRAGMENT, null, target);
+    }
+
+    /**
+     * 添加 Fragment 5 参数重载
+     *
+     * @param fm          FragmentManager对象
+     * @param target      待添加的Fragment
+     * @param containerId 布局Id
+     * @param enterAnim   进场动画Id
+     * @param exitAnim    退场动画Id
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           @AnimRes final int enterAnim,
+                           @AnimRes final int exitAnim) {
+        add(fm, target, containerId, false, enterAnim, exitAnim, 0, 0);
+    }
+
+    /**
+     * 添加 Fragment 6 参数重载
+     *
+     * @param fm          FragmentManager对象
+     * @param target      待添加的Fragment
+     * @param containerId 布局Id
+     * @param isAddStack  是否入回退栈
+     * @param enterAnim   进场动画Id
+     * @param exitAnim    退场动画Id
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           final boolean isAddStack,
+                           @AnimRes final int enterAnim,
+                           @AnimRes final int exitAnim) {
+        add(fm, target, containerId, isAddStack, enterAnim, exitAnim, 0, 0);
+    }
+
+    /**
+     * 添加 Fragment 7 参数重载
      *
      * @param fm           FragmentManager对象
-     * @param dest         待添加的Fragment
+     * @param target       待添加的Fragment
      * @param containerId  布局Id
      * @param enterAnim    进场动画Id
      * @param exitAnim     退场动画Id
      * @param popEnterAnim 以退回键呼出的进场动画
      * @param popExitAnim  以退回键呼出的退场动画
      */
-    public static void add(@NonNull FragmentManager fm, @NonNull Fragment dest, @IdRes final int containerId, @IdRes final int enterAnim, @IdRes final int exitAnim, @IdRes final int popEnterAnim, @IdRes final int popExitAnim) {
-        FragmentTransaction fragmentTransaction = fm.beginTransaction();
-        putArgs(dest,new Args(containerId,false,false));
-        addAnim(fragmentTransaction, enterAnim, exitAnim, popEnterAnim, popExitAnim);
-        operate(TYPE_ADD_FRAGMENT, fm, fragmentTransaction, null, dest);
+    public static void add(@NonNull FragmentManager fm,
+                           @NonNull Fragment target,
+                           @IdRes final int containerId,
+                           @AnimRes final int enterAnim,
+                           @AnimRes final int exitAnim,
+                           @AnimRes final int popEnterAnim,
+                           @AnimRes final int popExitAnim) {
+        add(fm, target, containerId, false, enterAnim, exitAnim, popEnterAnim, popExitAnim);
     }
 
     /**
-     * Fragment操作业务方法
+     * 添加 Fragment 8 参数重载
+     *
+     * @param fm           FragmentManager对象
+     * @param target       待添加的Fragment
+     * @param containerId  布局Id
+     * @param isAddStack   是否入回退栈
+     * @param enterAnim    进场动画Id
+     * @param exitAnim     退场动画Id
+     * @param popEnterAnim 以退回键呼出的进场动画
+     * @param popExitAnim  以退回键呼出的退场动画
+     */
+    public static void add(@NonNull final FragmentManager fm,
+                           @NonNull final Fragment target,
+                           @IdRes final int containerId,
+                           final boolean isAddStack,
+                           @AnimRes final int enterAnim,
+                           @AnimRes final int exitAnim,
+                           @AnimRes final int popEnterAnim,
+                           @AnimRes final int popExitAnim) {
+        FragmentTransaction ft = fm.beginTransaction();
+        putArgs(target, new Args(containerId, false, isAddStack));
+        addAnim(ft, enterAnim, exitAnim, popEnterAnim, popExitAnim);
+        operate(TYPE_ADD_FRAGMENT, fm, ft, null, target);
+    }
+
+    /**
+     * Fragment操作事务方法
      *
      * @param type                操作类型
      * @param fragmentManager     FragmentManager对象
@@ -81,6 +250,22 @@ public class FragmentUtils {
     }
 
     /**
+     * 无动画过渡的操作事务方法
+     *
+     * @param fm
+     * @param type
+     * @param src
+     * @param dest
+     */
+    private static void operateNoAnim(final FragmentManager fm,
+                                      final int type,
+                                      final Fragment src,
+                                      Fragment... dest) {
+        FragmentTransaction ft = fm.beginTransaction();
+        operate(type, fm, ft, src, dest);
+    }
+
+    /**
      * 添加进场退场动画
      *
      * @param ft       FragmentTransaction对象
@@ -91,6 +276,15 @@ public class FragmentUtils {
      */
     private static void addAnim(FragmentTransaction ft, int enter, int exit, int popEnter, int popExit) {
         ft.setCustomAnimations(enter, exit, popEnter, popExit);
+    }
+
+    private static void addSharedElement(final FragmentTransaction ft,
+                                         final View... views) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            for (View view : views) {
+                ft.addSharedElement(view, view.getTransitionName());
+            }
+        }
     }
 
     private static void putArgs(final Fragment fragment, final Args args) {
