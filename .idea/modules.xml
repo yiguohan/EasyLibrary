@@ -3,10 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/EasyLibrary.iml" filepath="$PROJECT_DIR$/EasyLibrary.iml" />
-      <module fileurl="file://$PROJECT_DIR$/EasyLibrary.iml" filepath="$PROJECT_DIR$/EasyLibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/easylib/easylib.iml" filepath="$PROJECT_DIR$/easylib/easylib.iml" />
       <module fileurl="file://$PROJECT_DIR$/easylib/easylib.iml" filepath="$PROJECT_DIR$/easylib/easylib.iml" />
     </modules>
   </component>
