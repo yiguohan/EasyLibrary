@@ -632,27 +632,55 @@ public class FragmentUtils {
         }
     }
 
+    /**
+     * 弹栈 FragmentManager 对象内的Fragment 直到popClz为止
+     *
+     * @param fm          FragmentManager 对象
+     * @param popClz      出栈 fragment 的类型
+     * @param isInclusive 是否连popClz的这个Fragment一起弹栈
+     */
     public static void popTo(@NonNull final FragmentManager fm,
                              final Class<? extends Fragment> popClz,
                              final boolean isInclusive) {
         popTo(fm, popClz, isInclusive, true);
     }
 
+    /**
+     * 弹栈 FragmentManager 对象内的Fragment 直到popClz为止
+     *
+     * @param fm          FragmentManager 对象
+     * @param popClz      出栈 fragment 的类型
+     * @param isInclusive 是否连popClz的这个Fragment一起弹栈
+     * @param isImmediate 是否立即弹栈
+     */
     public static void popTo(@NonNull final FragmentManager fm,
                              final Class<? extends Fragment> popClz,
                              final boolean isInclusive,
                              final boolean isImmediate) {
         if (isImmediate) {
-            fm.popBackStackImmediate(popClz.getName(), isInclusive ? FragmentManager.POP_BACK_STACK_INCLUSIVE : 0);
+            fm.popBackStackImmediate(popClz.getName(),
+                    isInclusive ? FragmentManager.POP_BACK_STACK_INCLUSIVE : 0);
         } else {
-            fm.popBackStack(popClz.getName(), isInclusive ? FragmentManager.POP_BACK_STACK_INCLUSIVE : 0);
+            fm.popBackStack(popClz.getName(),
+                    isInclusive ? FragmentManager.POP_BACK_STACK_INCLUSIVE : 0);
         }
     }
 
+    /**
+     * 所有 FragmentManager 中的fragment弹栈
+     *
+     * @param fm FragmentManager 对象
+     */
     public static void popAll(@NonNull final FragmentManager fm) {
         popAll(fm, true);
     }
 
+    /**
+     * 所有 FragmentManager 中的fragment弹栈
+     *
+     * @param fm          FragmentManager 对象
+     * @param isImmediate 是否立即弹栈
+     */
     public static void popAll(@NonNull final FragmentManager fm,
                               final boolean isImmediate) {
         while (fm.getBackStackEntryCount() > 0) {
@@ -666,6 +694,11 @@ public class FragmentUtils {
 
 /*---------------------------------------移除 fragment---------------------------------------------*/
 
+    /**
+     * 移除 fragment
+     *
+     * @param remove 要移除的 fragment
+     */
     public static void remove(@NonNull final Fragment remove) {
         operateNoAnim(remove.getFragmentManager(), TYPE_REMOVE_FRAGMENT, null, remove);
     }
@@ -733,7 +766,53 @@ public class FragmentUtils {
                     }
                 }
                 break;
-
+            case TYPE_HIDE_FRAGMENT:
+                for (Fragment fragment : dests) {
+                    fragmentTransaction.hide(fragment);
+                }
+                break;
+            case TYPE_SHOW_FRAGMENT:
+                for (Fragment fragment : dests) {
+                    fragmentTransaction.show(fragment);
+                }
+                break;
+            case TYPE_SHOW_HIDE_FRAGMENT:
+                fragmentTransaction.show(src);
+                for (Fragment fragment : dests) {
+                    if (fragment != src) {
+                        fragmentTransaction.hide(fragment);
+                    }
+                }
+                break;
+            case TYPE_REPLACE_FRAGMENT:
+                name = dests[0].getClass().getName();
+                args = dests[0].getArguments();
+                fragmentTransaction.replace(args.getInt(ARGS_ID), dests[0], name);
+                if (args.getBoolean(ARGS_IS_ADD_STACK)) {
+                    fragmentTransaction.addToBackStack(name);
+                }
+                break;
+            case TYPE_REMOVE_FRAGMENT:
+                for (Fragment fragment : dests) {
+                    if (fragment != src) {
+                        fragmentTransaction.remove(fragment);
+                    }
+                }
+                break;
+            case TYPE_REMOVE_TO_FRAGMENT:
+                for (int i = dests.length - 1; i >= 0; --i) {
+                    Fragment fragment = dests[i];
+                    if (fragment == dests[0]) {
+                        if (src != null) {
+                            fragmentTransaction.remove(fragment);
+                        }
+                        break;
+                    }
+                    fragmentTransaction.remove(fragment);
+                }
+                break;
+            default:
+                break;
         }
         fragmentTransaction.commitAllowingStateLoss();
     }
