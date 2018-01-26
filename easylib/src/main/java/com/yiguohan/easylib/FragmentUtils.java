@@ -1,18 +1,23 @@
 package com.yiguohan.easylib;
 
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.support.annotation.AnimRes;
 import android.support.annotation.AnimatorRes;
+import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.List;
@@ -633,7 +638,7 @@ public class FragmentUtils {
     }
 
     /**
-     * 弹栈 FragmentManager 对象内的Fragment 直到popClz为止
+     * 弹栈 FragmentManager 对象内的fragment 直到popClz为止
      *
      * @param fm          FragmentManager 对象
      * @param popClz      出栈 fragment 的类型
@@ -646,7 +651,7 @@ public class FragmentUtils {
     }
 
     /**
-     * 弹栈 FragmentManager 对象内的Fragment 直到popClz为止
+     * 弹栈 FragmentManager 对象内的fragment 直到popClz为止
      *
      * @param fm          FragmentManager 对象
      * @param popClz      出栈 fragment 的类型
@@ -703,17 +708,108 @@ public class FragmentUtils {
         operateNoAnim(remove.getFragmentManager(), TYPE_REMOVE_FRAGMENT, null, remove);
     }
 
+    /**
+     * 移除 FragmentManager 对象内的fragment
+     *
+     * @param removeTo    要移除到的fragment
+     * @param isInclusive 是否把removeTo对应的fragment对象也一起移除
+     */
     public static void removeTo(@NonNull final Fragment removeTo, final boolean isInclusive) {
         operateNoAnim(removeTo.getFragmentManager(), TYPE_REMOVE_TO_FRAGMENT,
                 isInclusive ? removeTo : null, removeTo);
     }
 
+    /**
+     * 移除 FragmentManager 对象内的所有fragment
+     *
+     * @param fm
+     */
     public static void removeAll(@NonNull final FragmentManager fm) {
         List<Fragment> fragments = getFragments(fm);
         operateNoAnim(fm,
                 TYPE_REMOVE_FRAGMENT,
                 null,
                 fragments.toArray(new Fragment[fragments.size()]));
+    }
+
+/*---------------------------------------获取 fragment---------------------------------------------*/
+
+    /**
+     * 获取顶部的 fragment(未加入退回栈)
+     *
+     * @param fm FragmentManager对象
+     * @return 最后加入的 fragment
+     */
+    public static Fragment getTop(@NonNull final FragmentManager fm) {
+        return getTopInStack(fm, false);
+    }
+
+    /**
+     * 获取退回栈顶的 fragment
+     *
+     * @param fm FragmentManager对象
+     * @return
+     */
+    public static Fragment getTopInStack(@NonNull final FragmentManager fm) {
+        return getTopInStack(fm, true);
+    }
+
+    private static Fragment getTopInStack(@NonNull final FragmentManager fm,
+                                          final boolean isInStack) {
+        List<Fragment> fragments = getFragments(fm);
+        for (int i = fragments.size() - 1; i >= 0; --i) {
+            Fragment fragment = fragments.get(i);
+            if (fragment != null) {
+                if (isInStack) {
+                    if (fragment.getArguments().getBoolean(ARGS_IS_ADD_STACK)) {
+                        return fragment;
+                    }
+                } else {
+                    return fragment;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取顶部可见 fragment(未加入退回栈)
+     *
+     * @param fm FragmentManager对象
+     * @return 顶层可见 fragment
+     */
+    public static Fragment getTopShow(@NonNull final FragmentManager fm) {
+        return getTopShowIsInStack(fm, false);
+    }
+
+    /**
+     * 获取退回栈顶部可见 fragment
+     *
+     * @param fm FragmentManager对象
+     * @return 栈中顶层可见 fragment
+     */
+    public static Fragment getTopShowInStack(@NonNull final FragmentManager fm) {
+        return getTopShowIsInStack(fm, true);
+    }
+
+    private static Fragment getTopShowIsInStack(@NonNull final FragmentManager fm, final boolean isInstack) {
+        List<Fragment> fragments = getFragments(fm);
+        for (int i = fragments.size() - 1; i >= 0; i--) {
+            Fragment fragment = fragments.get(i);
+            if (fragment != null
+                    && fragment.isResumed()
+                    && fragment.isVisible()
+                    && fragment.getUserVisibleHint()) {
+                if (isInstack) {
+                    if (fragment.getArguments().getBoolean(ARGS_IS_ADD_STACK)) {
+                        return fragment;
+                    }
+                } else {
+                    return fragment;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -729,6 +825,151 @@ public class FragmentUtils {
             return Collections.emptyList();
         }
         return fragments;
+    }
+
+    /**
+     * 获取同级别退回栈中的 fragment
+     *
+     * @param fm FragmentManager对象
+     * @return FragmentManager对象在退回栈中的 fragment
+     */
+    public static List<Fragment> getFragmentsInStack(@NonNull final FragmentManager fm) {
+        List<Fragment> fragments = getFragments(fm);
+        List<Fragment> result = new ArrayList<>();
+        for (Fragment fragment : fragments) {
+            if (fragment != null && fragment.getArguments().getBoolean(ARGS_IS_ADD_STACK)) {
+                result.add(fragment);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取栈中所有的 fragment
+     *
+     * @param fm FragmentManager对象
+     * @return 所有的fragment
+     */
+    public static List<FragmentNode> getAllFragmentsInStack(@NonNull final FragmentManager fm) {
+        return getAllFragmentsInStack(fm, new ArrayList<FragmentNode>());
+    }
+
+    private static List<FragmentNode> getAllFragmentsInStack(@NonNull final FragmentManager fm,
+                                                             final List<FragmentNode> result) {
+        List<Fragment> fragments = getFragments(fm);
+        for (int i = fragments.size() - 1; i >= 0; i--) {
+            Fragment fragment = fragments.get(i);
+            if (fragment != null && fragment.getArguments().getBoolean(ARGS_IS_ADD_STACK)) {
+                result.add(new FragmentNode(fragment,
+                        getAllFragmentsInStack(fragment.getChildFragmentManager(),
+                                new ArrayList<FragmentNode>())));
+            }
+        }
+        return result;
+    }
+
+/*-------------------------------------------其它-------------------------------------------------*/
+
+    /**
+     * 查找 fragment
+     *
+     * @param fm      FragmentManager对象
+     * @param findClz 要查找的 fragment 类型
+     * @return 查找到的 fragment
+     */
+    public static Fragment findFragment(@NonNull final FragmentManager fm,
+                                        final Class<? extends Fragment> findClz) {
+        return fm.findFragmentByTag(findClz.getName());
+    }
+
+    /**
+     * 处理 fragment 返回键
+     * 如果 fragment 实现了 OnBackClickListener 接口，返回{@code true}: 表示已消费回退键事件，反之则没消费
+     *
+     * @param fragment
+     * @return 是否消费回退事件
+     */
+    public static boolean dispatchBackPress(@NonNull final Fragment fragment) {
+        return fragment.isResumed()
+                && fragment.isVisible()
+                && fragment.getUserVisibleHint()
+                && fragment instanceof OnBackClickListener
+                && ((OnBackClickListener) fragment).onBackClick();
+    }
+
+    /**
+     * 处理 fragment 回退键
+     * <p>如果 fragment 实现了 OnBackClickListener 接口，返回{@code true}: 表示已消费回退键事件，反之则没消费</p>
+     * <p>具体示例见 FragmentActivity</p>
+     *
+     * @param fm fragment 管理器
+     * @return 是否消费回退事件
+     */
+    public static boolean dispatchBackPress(@NonNull final FragmentManager fm) {
+        List<Fragment> fragments = getFragments(fm);
+        if (fragments == null || fragments.isEmpty()) {
+            return false;
+        }
+        for (int i = fragments.size() - 1; i >= 0; --i) {
+            Fragment fragment = fragments.get(i);
+            if (fragment != null
+                    && fragment.isResumed()
+                    && fragment.isVisible()
+                    && fragment.getUserVisibleHint()
+                    && fragment instanceof OnBackClickListener
+                    && ((OnBackClickListener) fragment).onBackClick()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 设置背景色
+     *
+     * @param fragment fragment
+     * @param color    背景色
+     */
+    public static void setBackgroundColor(@NonNull final Fragment fragment,
+                                          @ColorInt final int color) {
+        View view = fragment.getView();
+        if (view != null) {
+            view.setBackgroundColor(color);
+        }
+    }
+
+    /**
+     * 设置背景资源
+     *
+     * @param fragment fragment
+     * @param resId    资源id
+     */
+    public static void setBackgroundResource(@NonNull final Fragment fragment,
+                                             @DrawableRes final int resId) {
+        View view = fragment.getView();
+        if (view != null) {
+            view.setBackgroundResource(resId);
+        }
+    }
+
+    /**
+     * 设置背景
+     *
+     * @param fragment   fragment
+     * @param background 背景
+     */
+    public static void setBackground(@NonNull final Fragment fragment, final Drawable background) {
+        ViewCompat.setBackground(fragment.getView(), background);
+    }
+
+    /**
+     * 获取类名
+     *
+     * @param fragment fragment
+     * @return 类名
+     */
+    public static String getSimpleName(final Fragment fragment) {
+        return fragment == null ? "null" : fragment.getClass().getSimpleName();
     }
 
     /**
@@ -892,6 +1133,25 @@ public class FragmentUtils {
         return new Args(bundle.getInt(ARGS_ID, fragment.getId()),
                 bundle.getBoolean(ARGS_IS_HIDE),
                 bundle.getBoolean(ARGS_IS_ADD_STACK));
+    }
+
+    public interface OnBackClickListener {
+        boolean onBackClick();
+    }
+
+    public static class FragmentNode {
+        Fragment fragment;
+        List<FragmentNode> next;
+
+        public FragmentNode(Fragment fragment, List<FragmentNode> next) {
+            this.fragment = fragment;
+            this.next = next;
+        }
+
+        @Override
+        public String toString() {
+            return fragment.getClass().getSimpleName() + "->" + ((next == null || next.isEmpty()) ? "no child" : next.toString());
+        }
     }
 
     /**
